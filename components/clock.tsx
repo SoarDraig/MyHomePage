@@ -1,0 +1,45 @@
+"use client"
+
+import { useEffect, useState } from "react"
+
+export function Clock() {
+  const [hours, setHours] = useState<string>("00")
+  const [minutes, setMinutes] = useState<string>("00")
+  const [seconds, setSeconds] = useState<string>("00")
+  const [date, setDate] = useState<string>("")
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date()
+      setHours(now.getHours().toString().padStart(2, "0"))
+      setMinutes(now.getMinutes().toString().padStart(2, "0"))
+      setSeconds(now.getSeconds().toString().padStart(2, "0"))
+      setDate(
+        now.toLocaleDateString("zh-CN", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          weekday: "long",
+        }),
+      )
+    }
+
+    updateTime()
+    const timer = setInterval(updateTime, 1000)
+
+    return () => clearInterval(timer)
+  }, [])
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-center gap-1 text-6xl md:text-7xl font-light tracking-tight text-foreground">
+        <span className="inline-block min-w-[2.4ch] text-center tabular-nums">{hours}</span>
+        <span>:</span>
+        <span className="inline-block min-w-[2.4ch] text-center tabular-nums">{minutes}</span>
+        <span>:</span>
+        <span className="inline-block min-w-[2.4ch] text-center tabular-nums">{seconds}</span>
+      </div>
+      <p className="text-lg md:text-xl text-muted-foreground text-center">{date}</p>
+    </div>
+  )
+}
