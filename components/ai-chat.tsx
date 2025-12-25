@@ -8,6 +8,10 @@ import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Send, Settings, Plus, Trash2, Check } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import rehypeHighlight from "rehype-highlight"
+import "highlight.js/styles/github-dark.css"
 
 type AIConfig = {
   id: string
@@ -46,6 +50,7 @@ export function AIChat() {
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const messagesContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const savedConfigs = localStorage.getItem("ai_configs")
@@ -60,7 +65,9 @@ export function AIChat() {
   }, [])
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight
+    }
   }
 
   useEffect(() => {
@@ -351,7 +358,7 @@ export function AIChat() {
 
       {isConfigured && (
         <>
-          <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
             {messages.length === 0 && (
               <div className="text-center text-slate-600 dark:text-slate-400 py-8">
                 使用 {currentConfig.name} 开始对话...
@@ -366,7 +373,41 @@ export function AIChat() {
                       : "glass-card text-slate-800 dark:text-white"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                  {message.role === "assistant" ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none
+                      prose-headings:my-1 prose-headings:text-lg prose-headings:font-semibold prose-headings:text-foreground
+                      prose-p:my-0.5 prose-p:leading-snug prose-p:text-base
+                      prose-ul:my-0.5 prose-ol:my-0.5 prose-li:my-0 prose-li:text-base prose-li:leading-relaxed
+                      prose-strong:font-semibold prose-em:italic
+                      prose-code:text-pink-400 prose-code:bg-pink-500/10 prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:font-mono
+                      prose-pre:bg-slate-900/80 prose-pre:border prose-pre:border-slate-700 prose-pre:p-3 prose-pre:rounded-lg prose-pre:my-1 prose-pre:max-h-96 prose-pre:overflow-x-auto
+                      prose-blockquote:border-l-3 prose-blockquote:border-blue-400 prose-blockquote:pl-3 prose-blockquote:italic prose-blockquote:my-1 prose-blockquote:text-base
+                      prose-a:text-blue-400 prose-a:no-underline hover:prose-a:underline prose-a:text-sm
+                      prose-table:my-1 prose-table:border prose-table:border-slate-600 prose-table:text-sm
+                      prose-th:border prose-th:border-slate-600 prose-th:bg-slate-800/50 prose-th:px-2 prose-th:py-1
+                      prose-td:border prose-td:border-slate-600 prose-td:px-2 prose-td:py-1
+                      prose-hr:border-slate-600 prose-hr:my-1 prose-hr:border-t
+                      prose-img:my-1 prose-img:rounded-lg prose-img:max-w-full
+                      !prose-p:text-foreground
+                      !prose-ul:text-foreground
+                      !prose-ol:text-foreground
+                      !prose-li:text-foreground
+                      !prose-blockquote:text-foreground
+                      !prose-hr:border-slate-500
+                      dark:prose-code:text-pink-300
+                      dark:prose-a:text-blue-300
+                      dark:prose-th:bg-slate-700/50
+                      dark:prose-pre:bg-slate-800/90">
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        rehypePlugins={[rehypeHighlight]}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap break-words">{message.content}</div>
+                  )}
                 </div>
               </div>
             ))}
