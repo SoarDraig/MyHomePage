@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { Send, Settings, Plus, Trash2, Check } from "lucide-react"
+import { Send, Settings, Plus, Trash2, Check, RefreshCw } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
@@ -37,7 +37,26 @@ type Message = {
   content: string
 }
 
+const QUOTES = [
+  { text: "生活就像骑自行车，想要保持平衡就得不断前进。", author: "爱因斯坦" },
+  { text: "人生没有白走的路，每一步都算数。", author: "未知" },
+  { text: "今天的努力，是明天的铺路石。", author: "未知" },
+  { text: "学习不是为了知道更多，而是为了变得更智慧。", author: "苏格拉底" },
+  { text: "与其临渊羡鱼，不如退而结网。", author: "淮南子" },
+  { text: "读万卷书，行万里路。", author: "刘希夷" },
+  { text: "知之者不如好之者，好之者不如乐之者。", author: "孔子" },
+  { text: "学而不思则罔，思而不学则殆。", author: "孔子" },
+  { text: "天行健，君子以自强不息。", author: "易经" },
+  { text: "路漫漫其修远兮，吾将上下而求索。", author: "屈原" },
+  { text: "己所不欲，勿施于人。", author: "孔子" },
+  { text: "三人行，必有我师焉。", author: "孔子" },
+  { text: "宝剑锋从磨砺出，梅花香自苦寒来。", author: "未知" },
+  { text: "不积跬步，无以至千里。", author: "荀子" },
+  { text: "千里之行，始于足下。", author: "老子" },
+]
+
 export function AIChat() {
+  const [currentQuote, setCurrentQuote] = useState(QUOTES[0])
   const [configs, setConfigs] = useState<AIConfig[]>(DEFAULT_CONFIGS)
   const [currentConfigId, setCurrentConfigId] = useState<string>("openai")
   const [showSettings, setShowSettings] = useState(false)
@@ -73,6 +92,11 @@ export function AIChat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  useEffect(() => {
+    const randomIndex = Math.floor(Math.random() * QUOTES.length)
+    setCurrentQuote(QUOTES[randomIndex])
+  }, [])
 
   const currentConfig = configs.find((c) => c.id === currentConfigId) || configs[0]
   const isConfigured = currentConfig && currentConfig.apiKey
@@ -244,19 +268,38 @@ export function AIChat() {
             </SelectContent>
           </Select>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => {
-            setShowSettings(!showSettings)
-            if (!showSettings) {
-              setEditingConfig(currentConfig)
-            }
-          }}
-          className="text-slate-600 dark:text-slate-300 hover:bg-white/20"
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 glass-card">
+            <span className="text-sm text-foreground/80 italic">
+              "{currentQuote.text}"
+            </span>
+            <span className="text-xs text-foreground/60">— {currentQuote.author}</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const randomIndex = Math.floor(Math.random() * QUOTES.length)
+                setCurrentQuote(QUOTES[randomIndex])
+              }}
+              className="h-5 w-5 text-foreground/50 hover:text-foreground/80 transition-colors"
+            >
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              setShowSettings(!showSettings)
+              if (!showSettings) {
+                setEditingConfig(currentConfig)
+              }
+            }}
+            className="text-slate-600 dark:text-slate-300 hover:bg-white/20"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       {showSettings && (
