@@ -20,7 +20,8 @@ export function Notes() {
   const isMobile = useIsMobile()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [newTodo, setNewTodo] = useState("")
-  const [activeTodoId, setActiveTodoId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [shatteringId, setShatteringId] = useState<string | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem("todos")
@@ -52,15 +53,15 @@ export function Notes() {
   }
 
   const handleDeleteTodo = (id: string) => {
-    setTodos(todos.filter((todo) => todo.id !== id))
-    setActiveTodoId(null)
-  }
-
-  const handleTodoClick = (id: string) => {
-    // 移动端点击待办事项切换删除按钮显示状态
-    if (isMobile) {
-      setActiveTodoId(activeTodoId === id ? null : id)
-    }
+    setShatteringId(id)
+    setTimeout(() => {
+      setDeletingId(id)
+      setShatteringId(null)
+      setTimeout(() => {
+        setTodos(todos.filter((todo) => todo.id !== id))
+        setDeletingId(null)
+      }, 300)
+    }, 500)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -91,10 +92,9 @@ export function Notes() {
         {todos.map((todo) => (
           <div
             key={todo.id}
-            className={`flex items-start gap-3 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 transition-all group ${
+            className={`flex items-start gap-3 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 transition-all duration-300 ease-out group ${
               isMobile ? "" : "hover:bg-white/20"
-            } ${activeTodoId === todo.id ? "bg-white/20" : ""}`}
-            onClick={() => handleTodoClick(todo.id)}
+            } ${shatteringId === todo.id ? "animate-glass-shatter" : deletingId === todo.id ? "opacity-0 scale-0" : "animate-fade-in"}`}
           >
             <div onClick={(e) => e.stopPropagation()}>
               <Checkbox checked={todo.completed} onCheckedChange={() => handleToggleTodo(todo.id)} className="mt-0.5" />
@@ -111,17 +111,18 @@ export function Notes() {
             <Button
               variant="ghost"
               size="icon"
-              className={`h-6 w-6 transition-opacity shrink-0 ${
+              className={`h-6 w-6 transition-all duration-300 shrink-0 hover:scale-110 hover:rotate-90 ${
                 isMobile
-                  ? activeTodoId === todo.id
-                    ? "opacity-100"
-                    : "opacity-0"
+                  ? "opacity-100"
                   : "opacity-0 group-hover:opacity-100"
-              }`}
+              } ${shatteringId === todo.id ? "opacity-0" : ""}`}
               onClick={(e) => {
                 e.stopPropagation()
-                handleDeleteTodo(todo.id)
+                if (shatteringId !== todo.id) {
+                  handleDeleteTodo(todo.id)
+                }
               }}
+              disabled={shatteringId === todo.id}
             >
               <X className="h-3 w-3 text-destructive" />
             </Button>

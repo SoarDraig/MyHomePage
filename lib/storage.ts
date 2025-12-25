@@ -12,6 +12,43 @@ export const STORAGE_KEYS: Record<string, string> = {
   QUICK_LINKS: "quickLinks",
   THEME: "theme", // 主题偏好
   SETTINGS_VERSION: "settings_version", // 配置版本号
+  USER_PROFILE: "user_profile", // 用户个人配置
+};
+
+// 用户个人配置类型
+export interface UserProfile {
+  nickname: string; // 昵称
+  avatar?: string; // 头像URL（预留）
+  customGreetings?: { // 自定义问候语（预留）
+    morning?: string;
+    afternoon?: string;
+    evening?: string;
+    night?: string;
+    weekend?: string;
+  };
+  timezone?: string; // 时区（预留）
+  dateFormat?: string; // 日期格式（预留）
+  showClock?: boolean; // 是否显示时钟
+  showGreeting?: boolean; // 是否显示问候语
+  language?: string; // 语言（预留）
+  backgroundMode?: "auto" | "manual"; // 背景模式：自动或手动
+  manualBackground?: {
+    timeOfDay: "dawn" | "morning" | "day" | "afternoon" | "evening" | "dusk" | "night";
+    weather: "sunny" | "cloudy" | "rainy" | "snowy";
+  };
+}
+
+// 默认用户配置
+export const DEFAULT_USER_PROFILE: UserProfile = {
+  nickname: "云螭",
+  showClock: true,
+  showGreeting: true,
+  language: "zh-CN",
+  backgroundMode: "auto",
+  manualBackground: {
+    timeOfDay: "day",
+    weather: "sunny",
+  },
 };
 
 // 配置版本号，用于数据迁移
@@ -25,6 +62,7 @@ export type AppConfig = {
   todos: any[];
   quickLinks: any[];
   theme?: string;
+  userProfile: UserProfile;
   exportedAt: string;
 };
 
@@ -110,6 +148,7 @@ export const configExport = {
       todos: storage.get(STORAGE_KEYS.TODOS, []),
       quickLinks: storage.get(STORAGE_KEYS.QUICK_LINKS, []),
       theme: storage.get(STORAGE_KEYS.THEME, ""),
+      userProfile: storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE),
       exportedAt: new Date().toISOString(),
     };
 
@@ -137,6 +176,7 @@ export const configExport = {
       todos: storage.get(STORAGE_KEYS.TODOS, []),
       quickLinks: storage.get(STORAGE_KEYS.QUICK_LINKS, []),
       theme: storage.get(STORAGE_KEYS.THEME, ""),
+      userProfile: storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE),
       exportedAt: new Date().toISOString(),
     };
 
@@ -201,6 +241,9 @@ export const configImport = {
       }
       if (config.theme) {
         storage.set(STORAGE_KEYS.THEME, config.theme);
+      }
+      if (config.userProfile) {
+        storage.set(STORAGE_KEYS.USER_PROFILE, config.userProfile);
       }
       
       // 更新版本号

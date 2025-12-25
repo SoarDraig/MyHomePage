@@ -19,6 +19,7 @@ import type { Metadata } from "next"
 import { Geist } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
+import { BackgroundEffects } from "@/components/background-effects"
 
 const _geist = Geist({ subsets: ["latin"] })
 
@@ -53,6 +54,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className={`font-sans antialiased`}>
+        <BackgroundEffects />
         {children}
         <Analytics />
       </body>

@@ -1,11 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { storage, STORAGE_KEYS, DEFAULT_USER_PROFILE } from "@/lib/storage";
 
 export function Greeting() {
   const [greeting, setGreeting] = useState<string>("");
+  const [nickname, setNickname] = useState<string>(DEFAULT_USER_PROFILE.nickname);
+  const [showGreeting, setShowGreeting] = useState(true);
 
   useEffect(() => {
+    // 加载用户配置
+    const userProfile = storage.get(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE);
+    setNickname(userProfile.nickname);
+    setShowGreeting(userProfile.showGreeting !== false);
+
     const now = new Date();
     const dayOfWeek = now.getDay(); // 0 = Sunday, 6 = Saturday
 
@@ -33,9 +41,13 @@ export function Greeting() {
     }
   }, []);
 
+  if (!showGreeting) {
+    return null;
+  }
+
   return (
     <h2 className="text-3xl md:text-4xl text-foreground font-light text-center">
-      {greeting}，云螭
+      {greeting}，{nickname}
     </h2>
   );
 }

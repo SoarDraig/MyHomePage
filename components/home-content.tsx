@@ -8,6 +8,7 @@ import { SearchBar } from "@/components/search-bar"
 import { AIChat } from "@/components/ai-chat"
 import { DockLinks } from "@/components/dock-links"
 import { SettingsPanel } from "@/components/settings-panel"
+import { BackgroundEffects } from "@/components/background-effects"
 import { initializeStorage } from "@/lib/storage"
 import { useIsMobile } from "@/hooks/use-mobile"
 
@@ -19,12 +20,9 @@ export function HomeContent() {
     initializeStorage()
   }, [])
   return (
-    <main className="min-h-screen p-6 md:p-8 bg-gradient-to-br from-blue-200 via-sky-300 to-cyan-200 dark:from-slate-950 dark:via-blue-950 dark:to-cyan-950 relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-[700px] h-[700px] opacity-40 pointer-events-none">
-        <div className="absolute inset-0 sunlight-glow" />
-        <div className="absolute top-0 left-0 w-[400px] h-[400px] sunlight-core blur-3xl" />
-        <div className="absolute top-[50px] left-[50px] w-[200px] h-[200px] bg-yellow-200/40 rounded-full blur-2xl" />
-      </div>
+    <main className="min-h-screen p-6 md:p-8 relative overflow-hidden">
+      {/* 动态背景效果组件 */}
+      <BackgroundEffects />
 
       <div className="w-full h-screen flex flex-col relative z-10">
         {/* 设置按钮 - 右上角 */}

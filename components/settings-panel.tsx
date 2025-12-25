@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -10,11 +10,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Settings, Download, Upload, Trash2, RefreshCw, Cloud } from "lucide-react"
-import { configExport, configImport, storage, STORAGE_KEYS, cloudSync } from "@/lib/storage"
+import { Settings, Download, Upload, Trash2, RefreshCw, Cloud, User } from "lucide-react"
+import { configExport, configImport, storage, STORAGE_KEYS, cloudSync, DEFAULT_USER_PROFILE, type UserProfile } from "@/lib/storage"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -26,6 +27,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Separator } from "@/components/ui/separator"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export function SettingsPanel() {
   const [isOpen, setIsOpen] = useState(false)
@@ -35,7 +37,37 @@ export function SettingsPanel() {
   const [isCloudSyncing, setIsCloudSyncing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
+  
+  // 用户配置状态
+  const [userProfile, setUserProfile] = useState<UserProfile>(DEFAULT_USER_PROFILE)
+  const [hasChanges, setHasChanges] = useState(false)
+  
+  useEffect(() => {
+    // 加载用户配置
+    const profile = storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE)
+    setUserProfile(profile)
+  }, [isOpen])
 
+  // 保存用户配置
+  const handleSaveProfile = () => {
+    console.log('[Settings] Saving profile:', userProfile)
+    storage.set(STORAGE_KEYS.USER_PROFILE, userProfile)
+    setHasChanges(false)
+    
+    // 触发自定义事件通知背景组件更新
+    const event = new CustomEvent('profile-settings-updated', { 
+      detail: { userProfile } 
+    })
+    console.log('[Settings] Dispatching event:', event)
+    window.dispatchEvent(event)
+    console.log('[Settings] Event dispatched successfully')
+    
+    toast({
+      title: "保存成功",
+      description: "个人配置已更新",
+    })
+  }
+  
   // 导出配置
   const handleExport = () => {
     setIsExporting(true)
@@ -167,11 +199,126 @@ export function SettingsPanel() {
           <DialogHeader>
             <DialogTitle className="text-2xl">配置管理</DialogTitle>
             <DialogDescription>
-              管理您的AI配置、待办事项和快捷链接
+              管理您的AI配置、待办事项、快捷链接和个人配置
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6 py-4">
+          <Tabs defaultValue="profile" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="profile">个人配置</TabsTrigger>
+              <TabsTrigger value="data">数据管理</TabsTrigger>
+              <TabsTrigger value="backup">备份恢复</TabsTrigger>
+            </TabsList>
+
+            {/* 个人配置标签页 */}
+            <TabsContent value="profile" className="space-y-6 mt-6">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>昵称</Label>
+                  <Input
+                    value={userProfile.nickname}
+                    onChange={(e) => {
+                      setUserProfile({ ...userProfile, nickname: e.target.value })
+                      setHasChanges(true)
+                    }}
+                    placeholder="请输入昵称"
+                    className="bg-white/5 border-white/10"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-greeting">显示问候语</Label>
+                    <Checkbox
+                      id="show-greeting"
+                      checked={userProfile.showGreeting !== false}
+                      onCheckedChange={(checked) => {
+                        setUserProfile({ ...userProfile, showGreeting: checked as boolean })
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-clock">显示时钟</Label>
+                    <Checkbox
+                      id="show-clock"
+                      checked={userProfile.showClock !== false}
+                      onCheckedChange={(checked) => {
+                        setUserProfile({ ...userProfile, showClock: checked as boolean })
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* 背景设置 */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="bg-mode">背景模式</Label>
+                    <select
+                      id="bg-mode"
+                      value={userProfile.backgroundMode || "auto"}
+                      onChange={(e) => {
+                        setUserProfile({ 
+                          ...userProfile, 
+                          backgroundMode: e.target.value as "auto" | "manual"
+                        })
+                        setHasChanges(true)
+                      }}
+                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm"
+                    >
+                      <option value="auto">自动（根据时间）</option>
+                      <option value="manual">手动</option>
+                    </select>
+                  </div>
+
+                  {userProfile.backgroundMode === "manual" && (
+                    <div className="space-y-3 p-4 rounded-lg bg-white/5 border border-white/10">
+                      <div className="space-y-2">
+                        <Label>时间段</Label>
+                        <select
+                          value={userProfile.manualBackground?.timeOfDay || "day"}
+                          onChange={(e) => {
+                            setUserProfile({
+                              ...userProfile,
+                              manualBackground: {
+                                ...userProfile.manualBackground!,
+                                timeOfDay: e.target.value as "dawn" | "morning" | "day" | "afternoon" | "evening" | "dusk" | "night"
+                              }
+                            })
+                            setHasChanges(true)
+                          }}
+                          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm w-full"
+                        >
+                          <option value="dawn">黎明（4:00-6:00）</option>
+                          <option value="morning">早晨（6:00-9:00）</option>
+                          <option value="day">上午（9:00-12:00）</option>
+                          <option value="afternoon">下午（12:00-16:00）</option>
+                          <option value="evening">傍晚（16:00-18:00）</option>
+                          <option value="dusk">黄昏（18:00-20:00）</option>
+                          <option value="night">夜晚（20:00-4:00）</option>
+                        </select>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {hasChanges && (
+                  <Button
+                    onClick={handleSaveProfile}
+                    className="w-full bg-blue-500 hover:bg-blue-600"
+                  >
+                    保存配置
+                  </Button>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* 数据管理标签页 */}
+            <TabsContent value="data" className="space-y-6 mt-6">
             {/* 配置统计 */}
             <div className="grid grid-cols-3 gap-4 p-4 rounded-lg bg-white/5 border border-white/10">
               <div className="text-center">
@@ -187,7 +334,10 @@ export function SettingsPanel() {
                 <div className="text-xs text-muted-foreground mt-1">快捷链接</div>
               </div>
             </div>
+            </TabsContent>
 
+            {/* 备份恢复标签页 */}
+            <TabsContent value="backup" className="space-y-6 mt-6">
             <Separator />
 
             {/* 导出配置 */}
@@ -287,7 +437,8 @@ export function SettingsPanel() {
                 刷新页面
               </Button>
             </div>
-          </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
 

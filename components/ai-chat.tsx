@@ -253,7 +253,7 @@ export function AIChat() {
       </div>
 
       {showSettings && (
-        <Card className="mb-4 p-4 bg-white/10 backdrop-blur-md border-white/20 max-h-80 overflow-y-auto custom-scrollbar">
+        <Card className="mb-4 p-4 glass-card max-h-80 overflow-y-auto custom-scrollbar animate-slide-down">
           <div className="space-y-4">
             {/* 配置列表 */}
             <div className="space-y-2">
@@ -358,12 +358,12 @@ export function AIChat() {
               </div>
             )}
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}>
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl backdrop-blur-md ${
+                  className={`max-w-[80%] p-3 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ${
                     message.role === "user"
-                      ? "bg-blue-500/80 text-white"
-                      : "bg-white/10 text-slate-800 dark:text-white border border-white/20"
+                      ? "bg-blue-500/80 text-white glass-card"
+                      : "glass-card text-slate-800 dark:text-white"
                   }`}
                 >
                   <div className="whitespace-pre-wrap break-words">{message.content}</div>
@@ -372,7 +372,7 @@ export function AIChat() {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-white/10 text-slate-800 dark:text-white border border-white/20 p-3 rounded-2xl backdrop-blur-md">
+                <div className="glass-card text-slate-800 dark:text-white p-3 rounded-2xl animate-glass-shimmer">
                   <div className="flex gap-1">
                     <span
                       className="w-2 h-2 bg-slate-500 rounded-full animate-bounce"
@@ -399,12 +399,12 @@ export function AIChat() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="输入消息..."
               disabled={isLoading}
-              className="flex-1 bg-white/10 backdrop-blur-md border-white/20 text-slate-800 dark:text-white placeholder:text-slate-500"
+              className="flex-1 glass-card text-slate-800 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-blue-500/30 transition-all duration-300 hover:scale-[1.01]"
             />
             <Button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-blue-500 hover:bg-blue-600 text-white transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 glass-card"
             >
               <Send className="h-4 w-4" />
             </Button>

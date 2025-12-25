@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Edit2 } from "lucide-react"
+import { Plus, X, Edit2, Settings } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Dialog,
@@ -48,6 +48,8 @@ export function DockLinks() {
   const [activeLinkId, setActiveLinkId] = useState<string | null>(null) // 移动端点击激活的链接
   const [isVisible, setIsVisible] = useState(isMobile) // 移动端默认显示
   const [isHovering, setIsHovering] = useState(false)
+  const [editModeAnimating, setEditModeAnimating] = useState(false) // 编辑模式动画状态
+  const [exitingEditMode, setExitingEditMode] = useState(false) // 退出编辑模式标志
 
   useEffect(() => {
     const saved = localStorage.getItem("quickLinks")
@@ -84,6 +86,18 @@ export function DockLinks() {
   useEffect(() => {
     if (isEditing) {
       setIsVisible(true)
+      setEditModeAnimating(true)
+      setHoveredIndex(null) // 进入编辑模式时清除悬停状态
+      setExitingEditMode(false) // 进入编辑模式时重置退出标志
+      const timer = setTimeout(() => setEditModeAnimating(false), 300)
+      return () => clearTimeout(timer)
+    } else {
+      // 退出编辑模式时清除悬停状态
+      setHoveredIndex(null)
+      setExitingEditMode(true) // 设置退出标志
+      // 300ms 后重置退出标志，与动画时间一致
+      const timer = setTimeout(() => setExitingEditMode(false), 300)
+      return () => clearTimeout(timer)
     }
   }, [isEditing])
 
@@ -157,7 +171,7 @@ export function DockLinks() {
   return (
     <>
       <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-150 ${
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out ${
           isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
         } ${isMobile ? "md:hidden" : ""}`}
         onMouseEnter={() => setIsHovering(true)}
@@ -166,13 +180,32 @@ export function DockLinks() {
         <div className="flex items-end gap-4">
           {links.map((link, index) => (
             <div key={link.id} className="relative group">
-              {isEditing && (
-                <div className={`absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1 transition-opacity ${
-                  isMobile
-                    ? activeLinkId === link.id
-                      ? "opacity-100"
-                      : "opacity-0"
-                    : "opacity-0 group-hover:opacity-100"
+              {/* 桌面端编辑模式下显示删除按钮 */}
+              {isEditing && !isMobile && (
+                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1 animate-fade-in-down">
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="h-7 w-7 rounded-full shadow-lg"
+                    onClick={() => handleDeleteLink(link.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    className="h-7 w-7 rounded-full shadow-lg"
+                    onClick={() => openEditDialog(link)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              
+              {/* 移动端编辑模式下，点击链接显示删除按钮 */}
+              {isEditing && isMobile && (
+                <div className={`absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1 transition-all duration-300 ease-out ${
+                  activeLinkId === link.id ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 }`}>
                   <Button
                     variant="destructive"
@@ -192,65 +225,98 @@ export function DockLinks() {
                   </Button>
                 </div>
               )}
-              <a
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex flex-col items-center"
-                onClick={(e) => {
-                  if (isEditing && isMobile) {
-                    e.preventDefault()
-                    handleLinkClick(link, index)
-                  }
-                }}
-                onMouseEnter={() => !isMobile && setHoveredIndex(index)}
-                onMouseLeave={() => !isMobile && setHoveredIndex(null)}
-              >
+              {!isEditing ? (
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex flex-col items-center"
+                  onMouseEnter={() => !isMobile && !exitingEditMode && setHoveredIndex(index)}
+                  onMouseLeave={() => !isMobile && !exitingEditMode && setHoveredIndex(null)}
+                >
+                  <div
+                    className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer ${
+                      hoveredIndex === index
+                        ? "bg-white/50 backdrop-blur-2xl border-2 border-white/70 shadow-2xl shadow-primary/40"
+                        : hoveredIndex === null
+                          ? "bg-white/25 backdrop-blur-2xl border border-white/40 shadow-xl"
+                          : "bg-transparent border-0 shadow-none"
+                    }`}
+                    style={{
+                      transform: `scale(${!isEditing ? getScale(index) : 1}) translateY(${!isEditing && hoveredIndex === index ? "-12px" : "0px"})`,
+                      transformOrigin: "bottom",
+                      transition: "transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out, border 200ms ease-out, background-color 200ms ease-out, box-shadow 200ms ease-out, backdrop-filter 200ms ease-out",
+                    }}
+                  >
+                    {link.icon ? (
+                      <span className="text-3xl">{link.icon}</span>
+                    ) : (
+                      <img
+                        src={getFaviconUrl(link.url) || "/placeholder.svg"}
+                        alt={link.title}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement
+                          target.style.display = "none"
+                        }}
+                      />
+                    )}
+                  </div>
+                  <span className="absolute -top-14 left-1/2 -translate-x-1/2 text-xs bg-black/90 text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
+                    {link.title}
+                  </span>
+                </a>
+              ) : (
                 <div
-                  className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer ${
-                    hoveredIndex === index
-                      ? "bg-white/40 backdrop-blur-xl border-2 border-white/60 shadow-2xl shadow-primary/30"
-                      : hoveredIndex === null
-                        ? "bg-white/15 backdrop-blur-xl border border-white/30 shadow-xl"
-                        : "bg-transparent border-0 shadow-none"
-                  }`}
-                  style={{
-                    transform: `scale(${getScale(index)}) translateY(${hoveredIndex === index ? "-12px" : "0px"})`,
-                    transformOrigin: "bottom",
-                    transition: "transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out, border 200ms ease-out, background-color 200ms ease-out, box-shadow 200ms ease-out, backdrop-filter 200ms ease-out",
+                  className="flex flex-col items-center"
+                  onClick={() => {
+                    if (isMobile) {
+                      handleLinkClick(link, index)
+                    }
                   }}
                 >
-                  {link.icon ? (
-                    <span className="text-3xl">{link.icon}</span>
-                  ) : (
-                    <img
-                      src={getFaviconUrl(link.url) || "/placeholder.svg"}
-                      alt={link.title}
-                      className="w-10 h-10 object-contain"
-                      onError={(e) => {
-                        const target = e.currentTarget as HTMLImageElement
-                        target.style.display = "none"
-                      }}
-                    />
-                  )}
+                  <div
+                    className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer bg-white/25 backdrop-blur-2xl border border-white/40 shadow-xl`}
+                  >
+                    {link.icon ? (
+                      <span className="text-3xl">{link.icon}</span>
+                    ) : (
+                      <img
+                        src={getFaviconUrl(link.url) || "/placeholder.svg"}
+                        alt={link.title}
+                        className="w-10 h-10 object-contain"
+                        onError={(e) => {
+                          const target = e.currentTarget as HTMLImageElement
+                          target.style.display = "none"
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
-                <span className="absolute -top-14 left-1/2 -translate-x-1/2 text-xs bg-black/90 text-white px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-lg">
-                  {link.title}
-                </span>
-              </a>
+              )}
             </div>
           ))}
 
-          {isEditing && (
+          {/* 添加按钮 - 移动端始终显示，桌面端编辑模式显示 */}
+          {(isEditing || isMobile) && (
             <>
               <div className="w-px h-12 bg-white/30 mx-1" />
-              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <Dialog 
+                open={isDialogOpen} 
+                onOpenChange={(open) => {
+                  setIsDialogOpen(open)
+                  // 关闭对话框时清除悬停状态
+                  if (!open && isEditing) {
+                    setHoveredIndex(null)
+                  }
+                }}
+              >
                 <DialogTrigger asChild>
                   <Button
                     variant="ghost"
                     size="icon"
                     onClick={openAddDialog}
-                    className="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-xl hover:bg-white/25 border border-white/30 shadow-xl"
+                    className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-2xl hover:bg-white/35 border border-white/40 shadow-xl"
                   >
                     <Plus className="h-8 w-8" />
                   </Button>
@@ -307,18 +373,21 @@ export function DockLinks() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsEditing(!isEditing)}
-          className={`w-14 h-14 rounded-full backdrop-blur-xl hover:bg-white/30 transition-all shadow-xl border ${
-            isEditing ? "bg-white/30 scale-110 border-white/40" : "bg-white/15 border-white/30"
-          }`}
-        >
-          <Edit2 className="h-6 w-6" />
-        </Button>
-      </div>
+      {/* 桌面端编辑按钮 - 齿轮形状，随 dock 栏显示 */}
+      {!isMobile && (
+        <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ease-out ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-0 pointer-events-none"}`}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsEditing(!isEditing)}
+            className={`w-14 h-14 rounded-full backdrop-blur-xl hover:bg-white/30 transition-all duration-300 ease-out shadow-xl border ${
+              isEditing ? "bg-white/30 scale-110 rotate-180 border-white/40" : "bg-white/15 rotate-0 border-white/30"
+            }`}
+          >
+            <Settings className="h-8 w-8 transition-transform duration-300" />
+          </Button>
+        </div>
+      )}
     </>
   )
 }
