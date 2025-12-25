@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Plus, X, Edit2 } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   Dialog,
   DialogContent,
@@ -37,13 +38,15 @@ const getFaviconUrl = (url: string) => {
 }
 
 export function DockLinks() {
+  const isMobile = useIsMobile()
   const [links, setLinks] = useState<Link[]>(DEFAULT_LINKS)
   const [isEditing, setIsEditing] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingLink, setEditingLink] = useState<Link | null>(null)
   const [formData, setFormData] = useState({ title: "", url: "", icon: "" })
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
-  const [isVisible, setIsVisible] = useState(false)
+  const [activeLinkId, setActiveLinkId] = useState<string | null>(null) // 移动端点击激活的链接
+  const [isVisible, setIsVisible] = useState(isMobile) // 移动端默认显示
   const [isHovering, setIsHovering] = useState(false)
 
   useEffect(() => {
@@ -58,6 +61,13 @@ export function DockLinks() {
   }, [links])
 
   useEffect(() => {
+    // 移动端始终显示，不监听鼠标事件
+    if (isMobile) {
+      setIsVisible(true)
+      return
+    }
+
+    // 桌面端监听鼠标移动
     const handleMouseMove = (e: MouseEvent) => {
       const distanceFromBottom = window.innerHeight - e.clientY
       if (distanceFromBottom < 120) {
@@ -69,7 +79,7 @@ export function DockLinks() {
 
     window.addEventListener("mousemove", handleMouseMove)
     return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [isHovering, isEditing])
+  }, [isHovering, isEditing, isMobile])
 
   useEffect(() => {
     if (isEditing) {
@@ -128,6 +138,14 @@ export function DockLinks() {
     setIsDialogOpen(true)
   }
 
+  const handleLinkClick = (link: Link, index: number) => {
+    // 移动端点击链接显示编辑按钮
+    if (isMobile && isEditing) {
+      setActiveLinkId(activeLinkId === link.id ? null : link.id)
+      setHoveredIndex(activeLinkId === link.id ? null : index)
+    }
+  }
+
   const getScale = (index: number) => {
     if (hoveredIndex === null) return 1
     const distance = Math.abs(index - hoveredIndex)
@@ -141,7 +159,7 @@ export function DockLinks() {
       <div
         className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-150 ${
           isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
-        }`}
+        } ${isMobile ? "md:hidden" : ""}`}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
@@ -149,7 +167,13 @@ export function DockLinks() {
           {links.map((link, index) => (
             <div key={link.id} className="relative group">
               {isEditing && (
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className={`absolute -top-12 left-1/2 -translate-x-1/2 flex gap-1 transition-opacity ${
+                  isMobile
+                    ? activeLinkId === link.id
+                      ? "opacity-100"
+                      : "opacity-0"
+                    : "opacity-0 group-hover:opacity-100"
+                }`}>
                   <Button
                     variant="destructive"
                     size="icon"
@@ -173,8 +197,14 @@ export function DockLinks() {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex flex-col items-center"
-                onMouseEnter={() => setHoveredIndex(index)}
-                onMouseLeave={() => setHoveredIndex(null)}
+                onClick={(e) => {
+                  if (isEditing && isMobile) {
+                    e.preventDefault()
+                    handleLinkClick(link, index)
+                  }
+                }}
+                onMouseEnter={() => !isMobile && setHoveredIndex(index)}
+                onMouseLeave={() => !isMobile && setHoveredIndex(null)}
               >
                 <div
                   className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer ${

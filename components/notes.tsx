@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Plus, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface TodoItem {
   id: string
@@ -16,8 +17,10 @@ interface TodoItem {
 }
 
 export function Notes() {
+  const isMobile = useIsMobile()
   const [todos, setTodos] = useState<TodoItem[]>([])
   const [newTodo, setNewTodo] = useState("")
+  const [activeTodoId, setActiveTodoId] = useState<string | null>(null)
 
   useEffect(() => {
     const saved = localStorage.getItem("todos")
@@ -50,6 +53,14 @@ export function Notes() {
 
   const handleDeleteTodo = (id: string) => {
     setTodos(todos.filter((todo) => todo.id !== id))
+    setActiveTodoId(null)
+  }
+
+  const handleTodoClick = (id: string) => {
+    // 移动端点击待办事项切换删除按钮显示状态
+    if (isMobile) {
+      setActiveTodoId(activeTodoId === id ? null : id)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -80,9 +91,14 @@ export function Notes() {
         {todos.map((todo) => (
           <div
             key={todo.id}
-            className="flex items-start gap-3 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 hover:bg-white/20 transition-all group"
+            className={`flex items-start gap-3 p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 transition-all group ${
+              isMobile ? "" : "hover:bg-white/20"
+            } ${activeTodoId === todo.id ? "bg-white/20" : ""}`}
+            onClick={() => handleTodoClick(todo.id)}
           >
-            <Checkbox checked={todo.completed} onCheckedChange={() => handleToggleTodo(todo.id)} className="mt-0.5" />
+            <div onClick={(e) => e.stopPropagation()}>
+              <Checkbox checked={todo.completed} onCheckedChange={() => handleToggleTodo(todo.id)} className="mt-0.5" />
+            </div>
             <div className="flex-1 min-w-0">
               <p
                 className={`text-sm break-words ${
@@ -95,8 +111,17 @@ export function Notes() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-              onClick={() => handleDeleteTodo(todo.id)}
+              className={`h-6 w-6 transition-opacity shrink-0 ${
+                isMobile
+                  ? activeTodoId === todo.id
+                    ? "opacity-100"
+                    : "opacity-0"
+                  : "opacity-0 group-hover:opacity-100"
+              }`}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleDeleteTodo(todo.id)
+              }}
             >
               <X className="h-3 w-3 text-destructive" />
             </Button>
