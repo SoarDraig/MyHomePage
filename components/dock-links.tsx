@@ -131,15 +131,15 @@ export function DockLinks() {
   const getScale = (index: number) => {
     if (hoveredIndex === null) return 1
     const distance = Math.abs(index - hoveredIndex)
-    if (distance === 0) return 1.5
-    if (distance === 1) return 1.15
+    if (distance === 0) return 1.25
+    if (distance === 1) return 1.08
     return 1
   }
 
   return (
     <>
       <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ${
+        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-150 ${
           isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
         }`}
         onMouseEnter={() => setIsHovering(true)}
@@ -185,9 +185,9 @@ export function DockLinks() {
                         : "bg-transparent border-0 shadow-none"
                   }`}
                   style={{
-                    transform: `scale(${getScale(index)}) translateY(${hoveredIndex === index ? "-16px" : "0px"})`,
+                    transform: `scale(${getScale(index)}) translateY(${hoveredIndex === index ? "-12px" : "0px"})`,
                     transformOrigin: "bottom",
-                    transition: "transform 400ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 300ms ease-out, border 300ms ease-out, background-color 300ms ease-out, box-shadow 300ms ease-out, backdrop-filter 300ms ease-out",
+                    transition: "transform 250ms cubic-bezier(0.34, 1.56, 0.64, 1), opacity 200ms ease-out, border 200ms ease-out, background-color 200ms ease-out, box-shadow 200ms ease-out, backdrop-filter 200ms ease-out",
                   }}
                 >
                   {link.icon ? (
