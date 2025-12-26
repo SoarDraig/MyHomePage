@@ -7,7 +7,9 @@
 export const STORAGE_KEYS: Record<string, string> = {
   AI_CONFIGS: "ai_configs",
   AI_CURRENT_CONFIG: "ai_current_config_id",
-  AI_CHAT_HISTORY: "ai_chat_history", // 预留：聊天历史
+  AI_CONVERSATIONS: "ai_conversations", // 对话列表
+  AI_CURRENT_CONVERSATION: "ai_current_conversation_id", // 当前对话ID
+  AI_CHAT_HISTORY: "ai_chat_history", // 预留：聊天历史（已废弃）
   TODOS: "todos",
   QUICK_LINKS: "quickLinks",
   THEME: "theme", // 主题偏好
@@ -15,6 +17,39 @@ export const STORAGE_KEYS: Record<string, string> = {
   USER_PROFILE: "user_profile", // 用户个人配置
   WEATHER_CITY: "weather-city", // 天气：城市
 };
+
+// 消息类型
+export interface ChatMessage {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+  timestamp: number;
+  model?: string; // 使用的模型
+}
+
+// 对话类型
+export interface Conversation {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  configId: string; // 关联的AI配置ID
+  createdAt: number;
+  updatedAt: number;
+  isPinned?: boolean; // 是否置顶
+  tags?: string[]; // 标签（预留）
+}
+
+// 对话列表元数据（用于优化性能，只存储必要信息）
+export interface ConversationMetadata {
+  id: string;
+  title: string;
+  configId: string;
+  createdAt: number;
+  updatedAt: number;
+  messageCount: number;
+  isPinned?: boolean;
+  lastMessage?: string;
+}
 
 // 用户个人配置类型
 export interface UserProfile {
@@ -340,6 +375,265 @@ export const migration = {
   migrate(): void {
     // 预留：未来版本升级时需要的数据迁移逻辑
     console.log("[Migration] Current version is up to date");
+  },
+};
+
+/**
+ * 对话存储管理
+ * 优化的对话存储和检索系统
+ */
+export const conversationStorage = {
+  /**
+   * 获取所有对话元数据（优化性能，只返回元数据）
+   */
+  getAllMetadata(): ConversationMetadata[] {
+    const conversations = storage.get<Record<string, Conversation>>(
+      STORAGE_KEYS.AI_CONVERSATIONS,
+      {}
+    );
+
+    return Object.values(conversations).map((conv) => ({
+      id: conv.id,
+      title: conv.title,
+      configId: conv.configId,
+      createdAt: conv.createdAt,
+      updatedAt: conv.updatedAt,
+      messageCount: conv.messages.length,
+      isPinned: conv.isPinned,
+      lastMessage: conv.messages[conv.messages.length - 1]?.content?.substring(0, 50) || "",
+    }));
+  },
+
+  /**
+   * 获取单个对话的完整数据
+   */
+  getConversation(id: string): Conversation | null {
+    const conversations = storage.get<Record<string, Conversation>>(
+      STORAGE_KEYS.AI_CONVERSATIONS,
+      {}
+    );
+    return conversations[id] || null;
+  },
+
+  /**
+   * 保存对话（创建或更新）
+   */
+  saveConversation(conversation: Conversation): void {
+    const conversations = storage.get<Record<string, Conversation>>(
+      STORAGE_KEYS.AI_CONVERSATIONS,
+      {}
+    );
+    conversations[conversation.id] = conversation;
+    storage.set(STORAGE_KEYS.AI_CONVERSATIONS, conversations);
+  },
+
+  /**
+   * 创建新对话
+   */
+  createConversation(configId: string, title?: string): Conversation {
+    const now = Date.now();
+    const newConversation: Conversation = {
+      id: `conv_${now}_${Math.random().toString(36).substr(2, 9)}`,
+      title: title || this.generateTitle(""),
+      messages: [],
+      configId,
+      createdAt: now,
+      updatedAt: now,
+      isPinned: false,
+    };
+
+    this.saveConversation(newConversation);
+    return newConversation;
+  },
+
+  /**
+   * 删除对话
+   */
+  deleteConversation(id: string): void {
+    const conversations = storage.get<Record<string, Conversation>>(
+      STORAGE_KEYS.AI_CONVERSATIONS,
+      {}
+    );
+    delete conversations[id];
+    storage.set(STORAGE_KEYS.AI_CONVERSATIONS, conversations);
+
+    // 如果删除的是当前对话，清除当前对话ID
+    const currentId = storage.get<string>(STORAGE_KEYS.AI_CURRENT_CONVERSATION, "");
+    if (currentId === id) {
+      storage.remove(STORAGE_KEYS.AI_CURRENT_CONVERSATION);
+    }
+  },
+
+  /**
+   * 切换对话置顶状态
+   */
+  togglePin(id: string): void {
+    const conversation = this.getConversation(id);
+    if (conversation) {
+      conversation.isPinned = !conversation.isPinned;
+      conversation.updatedAt = Date.now();
+      this.saveConversation(conversation);
+    }
+  },
+
+  /**
+   * 更新对话标题
+   */
+  updateTitle(id: string, title: string): void {
+    const conversation = this.getConversation(id);
+    if (conversation) {
+      conversation.title = title;
+      conversation.updatedAt = Date.now();
+      this.saveConversation(conversation);
+    }
+  },
+
+  /**
+   * 添加消息到对话
+   */
+  addMessage(conversationId: string, message: ChatMessage): void {
+    const conversation = this.getConversation(conversationId);
+    if (conversation) {
+      conversation.messages.push(message);
+      conversation.updatedAt = Date.now();
+
+      // 如果是第一条用户消息，更新标题
+      if (conversation.messages.length === 1 && message.role === "user") {
+        conversation.title = this.generateTitle(message.content);
+      }
+
+      this.saveConversation(conversation);
+    }
+  },
+
+  /**
+   * 更新最后一条消息（用于流式响应）
+   */
+  updateLastMessage(conversationId: string, content: string): void {
+    const conversation = this.getConversation(conversationId);
+    if (conversation && conversation.messages.length > 0) {
+      const lastMessage = conversation.messages[conversation.messages.length - 1];
+      if (lastMessage.role === "assistant") {
+        lastMessage.content = content;
+        conversation.updatedAt = Date.now();
+        this.saveConversation(conversation);
+      }
+    }
+  },
+
+  /**
+   * 获取当前对话ID
+   */
+  getCurrentConversationId(): string | null {
+    return storage.get<string | null>(STORAGE_KEYS.AI_CURRENT_CONVERSATION, null);
+  },
+
+  /**
+   * 设置当前对话ID
+   */
+  setCurrentConversationId(id: string): void {
+    storage.set(STORAGE_KEYS.AI_CURRENT_CONVERSATION, id);
+  },
+
+  /**
+   * 清除当前对话ID
+   */
+  clearCurrentConversationId(): void {
+    storage.remove(STORAGE_KEYS.AI_CURRENT_CONVERSATION);
+  },
+
+  /**
+   * 生成对话标题（从第一条消息提取）
+   */
+  generateTitle(firstMessage: string): string {
+    if (!firstMessage.trim()) {
+      return "新对话";
+    }
+
+    // 简单的标题生成：取前30个字符
+    let title = firstMessage.trim().substring(0, 30);
+    if (firstMessage.length > 30) {
+      title += "...";
+    }
+
+    // 移除常见的问候语
+    const greetings = ["你好", "hi", "hello", "嗨"];
+    for (const greeting of greetings) {
+      if (title.toLowerCase().startsWith(greeting.toLowerCase())) {
+        title = title.substring(greeting.length).trim() || "新对话";
+        break;
+      }
+    }
+
+    return title || "新对话";
+  },
+
+  /**
+   * 获取排序后的对话列表（置顶优先，然后按更新时间排序）
+   */
+  getSortedConversations(): ConversationMetadata[] {
+    const conversations = this.getAllMetadata();
+    return conversations.sort((a, b) => {
+      // 置顶的排在前面
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      // 然后按更新时间降序
+      return b.updatedAt - a.updatedAt;
+    });
+  },
+
+  /**
+   * 导出对话为JSON字符串
+   */
+  exportConversation(id: string): string {
+    const conversation = this.getConversation(id);
+    if (!conversation) {
+      throw new Error("Conversation not found");
+    }
+    return JSON.stringify(conversation, null, 2);
+  },
+
+  /**
+   * 导入对话
+   */
+  importConversation(jsonString: string): Conversation {
+    const conversation: Conversation = JSON.parse(jsonString);
+    
+    // 生成新的ID以避免冲突
+    conversation.id = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    conversation.updatedAt = Date.now();
+
+    this.saveConversation(conversation);
+    return conversation;
+  },
+
+  /**
+   * 清空所有对话
+   */
+  clearAll(): void {
+    storage.remove(STORAGE_KEYS.AI_CONVERSATIONS);
+    storage.remove(STORAGE_KEYS.AI_CURRENT_CONVERSATION);
+  },
+
+  /**
+   * 获取对话统计信息
+   */
+  getStats(): {
+    totalConversations: number;
+    totalMessages: number;
+    pinnedConversations: number;
+  } {
+    const conversations = storage.get<Record<string, Conversation>>(
+      STORAGE_KEYS.AI_CONVERSATIONS,
+      {}
+    );
+    const allConversations = Object.values(conversations);
+
+    return {
+      totalConversations: allConversations.length,
+      totalMessages: allConversations.reduce((sum, conv) => sum + conv.messages.length, 0),
+      pinnedConversations: allConversations.filter((conv) => conv.isPinned).length,
+    };
   },
 };
 

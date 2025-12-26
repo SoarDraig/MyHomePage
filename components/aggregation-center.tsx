@@ -35,7 +35,7 @@ interface WeatherData {
 
 export function AggregationCenter() {
   const isMobile = useIsMobile()
-  const [activeTab, setActiveTab] = useState("todos")
+  const [activeTab, setActiveTab] = useState("weather")
   const { toast } = useToast()
   
   // 待办事项状态
@@ -223,12 +223,18 @@ export function AggregationCenter() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-3 mb-4">
-          <TabsTrigger value="weather" className="flex items-center gap-1.5">
+        <TabsList className="grid grid-cols-3 mb-4 bg-white/15 backdrop-blur-md border border-white/30">
+          <TabsTrigger 
+            value="weather" 
+            className="flex items-center gap-1.5 data-[state=active]:bg-white/30 hover:bg-white/25 hover:scale-105 transition-all duration-200"
+          >
             <Cloud className="w-4 h-4" />
             天气
           </TabsTrigger>
-          <TabsTrigger value="todos" className="relative">
+          <TabsTrigger 
+            value="todos" 
+            className="relative data-[state=active]:bg-white/30 hover:bg-white/25 hover:scale-105 transition-all duration-200"
+          >
             待办事项
             {totalCount > 0 && (
               <Badge variant="secondary" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
@@ -236,7 +242,10 @@ export function AggregationCenter() {
               </Badge>
             )}
           </TabsTrigger>
-          <TabsTrigger value="bookmarks" className="flex items-center gap-1.5">
+          <TabsTrigger 
+            value="bookmarks" 
+            className="flex items-center gap-1.5 data-[state=active]:bg-white/30 hover:bg-white/25 hover:scale-105 transition-all duration-200"
+          >
             <Bookmark className="w-4 h-4" />
             书签
           </TabsTrigger>

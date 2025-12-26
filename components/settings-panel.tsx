@@ -195,7 +195,7 @@ export function SettingsPanel() {
             <Settings className="h-5 w-5" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-background/95 backdrop-blur-xl border-white/20">
+        <DialogContent className="bg-background/95 backdrop-blur-xl border-white/30 shadow-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">配置管理</DialogTitle>
             <DialogDescription>
