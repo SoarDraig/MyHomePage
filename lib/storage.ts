@@ -16,6 +16,10 @@ export const STORAGE_KEYS: Record<string, string> = {
   SETTINGS_VERSION: "settings_version", // 配置版本号
   USER_PROFILE: "user_profile", // 用户个人配置
   WEATHER_CITY: "weather-city", // 天气：城市
+  WORK_START_TIME: "work_start_time", // 工作开始时间
+  WORK_END_TIME: "work_end_time", // 工作结束时间
+  WORK_HOURS: "work_hours", // 工作时长
+  WORK_DATE: "work_date", // 工作日期（用于检测是否是今天）
 };
 
 // 消息类型
@@ -49,6 +53,14 @@ export interface ConversationMetadata {
   messageCount: number;
   isPinned?: boolean;
   lastMessage?: string;
+}
+
+// 工作时间配置类型
+export interface WorkTimeConfig {
+  startTime: string; // 上班时间 HH:MM:SS
+  endTime: string; // 下班时间 HH:MM:SS
+  hours: number; // 工作时长
+  date: string; // 日期 YYYY-MM-DD
 }
 
 // 用户个人配置类型
