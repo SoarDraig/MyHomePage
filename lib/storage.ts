@@ -38,6 +38,8 @@ export interface UserProfile {
     timeOfDay: "dawn" | "morning" | "day" | "afternoon" | "evening" | "dusk" | "night";
     weather: "sunny" | "cloudy" | "rainy" | "snowy";
   };
+  functionMode?: boolean; // 功能模式：开启显示AI助手和聚合中心，关闭只显示基础功能
+  darkMode?: boolean; // 深色模式：开启后强制显示深夜背景效果
 }
 
 // 默认用户配置
@@ -52,6 +54,8 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
     timeOfDay: "day",
     weather: "sunny",
   },
+  functionMode: true, // 默认开启功能模式
+  darkMode: false, // 默认关闭深色模式
 };
 
 // 配置版本号，用于数据迁移

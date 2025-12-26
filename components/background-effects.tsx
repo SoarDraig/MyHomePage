@@ -442,9 +442,13 @@ export function BackgroundEffects() {
   const [backgroundMode, setBackgroundMode] = useState<"auto" | "manual">("auto")
   const [manualBg, setManualBg] = useState<{ timeOfDay: TimeOfDay } | null>(null)
   const [isMounted, setIsMounted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [shouldAnimate, setShouldAnimate] = useState(false)
+  const [darkMode, setDarkMode] = useState(false)
 
   useEffect(() => {
-    setIsMounted(true)
+    // 延迟显示，避免闪烁
+    setTimeout(() => setIsMounted(true), 50)
 
     // 加载用户配置
     const userProfile = storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE)
@@ -467,20 +471,52 @@ export function BackgroundEffects() {
       return "night"
     }
 
-    // 根据用户配置决定使用自动还是手动模式
+    // 立即设置正确的背景，避免闪烁
+    let initialTimeOfDay: TimeOfDay
     if (userProfile.backgroundMode === "manual" && userProfile.manualBackground) {
-      // 手动模式：使用用户选择的时间
-      setTimeOfDay(userProfile.manualBackground.timeOfDay)
+      initialTimeOfDay = userProfile.manualBackground.timeOfDay
     } else {
-      // 自动模式：根据当前时间检测
-      setTimeOfDay(getTimeOfDay())
+      initialTimeOfDay = getTimeOfDay()
     }
+    setTimeOfDay(initialTimeOfDay)
+
+    // 加载深色模式配置
+    const userProfileDarkMode = storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE).darkMode
+    setDarkMode(userProfileDarkMode === true)
+    
+    // 深色模式开启时强制使用night
+    if (userProfileDarkMode) {
+      setTimeOfDay("night")
+      document.documentElement.setAttribute('data-time-of-day', "night")
+      document.documentElement.classList.add('dark')
+    } else {
+      // 深色模式关闭时使用正常逻辑
+      setTimeOfDay(initialTimeOfDay)
+      document.documentElement.setAttribute('data-time-of-day', initialTimeOfDay)
+      const isDarkTheme = initialTimeOfDay === "night"
+      if (isDarkTheme) {
+        document.documentElement.classList.add('dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+      }
+    }
+
+    // 触发颜色过渡动画
+    setTimeout(() => setShouldAnimate(true), 50)
+    
+    // 加载完成
+    setTimeout(() => setIsLoading(false), 100)
   }, [])
 
-  // 定期更新时间（仅自动模式）
+  // 定期更新时间（仅自动模式且深色模式关闭）
   useEffect(() => {
     const updateBackground = () => {
       const userProfile = storage.get<UserProfile>(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE)
+      
+      // 深色模式开启时不更新
+      if (userProfile.darkMode) {
+        return
+      }
       
       // 只在自动模式下更新
       if (userProfile.backgroundMode !== "auto") {
@@ -519,12 +555,17 @@ export function BackgroundEffects() {
       console.log('[Background] User profile:', userProfile)
       
       setBackgroundMode(userProfile.backgroundMode || "auto")
+      setDarkMode(userProfile.darkMode === true)
       
       if (userProfile.manualBackground) {
         setManualBg({ timeOfDay: userProfile.manualBackground.timeOfDay })
       }
 
-      if (userProfile.backgroundMode === "manual" && userProfile.manualBackground) {
+      // 深色模式优先
+      if (userProfile.darkMode) {
+        console.log('[Background] Dark mode enabled, forcing night theme')
+        setTimeOfDay("night")
+      } else if (userProfile.backgroundMode === "manual" && userProfile.manualBackground) {
         console.log('[Background] Manual mode:', userProfile.manualBackground)
         setTimeOfDay(userProfile.manualBackground.timeOfDay)
       } else {
@@ -560,16 +601,30 @@ export function BackgroundEffects() {
 
   const theme = BACKGROUND_THEMES[timeOfDay]
 
-  // 客户端挂载前不渲染
-  if (!isMounted) {
-    return <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-500 to-purple-600 transition-all duration-1000" />
+  // 加载状态 - 使用白色背景，然后过渡到实际背景
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 -z-10 flex items-center justify-center">
+        {/* 加载时的背景 - 初始为白色 */}
+        <div
+          className="absolute inset-0 transition-all duration-2000 ease-out"
+          style={{ 
+            background: shouldAnimate ? theme.from : 'linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%)'
+          }}
+        />
+        {/* 加载指示器 */}
+        <div className="relative z-10">
+          <div className="w-12 h-12 border-4 border-slate-200 border-t-slate-600 rounded-full animate-spin" />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden">
       {/* 主背景渐变 */}
       <div
-        className="absolute inset-0 transition-all duration-1000"
+        className={`absolute inset-0 transition-all duration-2000 ease-out ${shouldAnimate ? '' : 'opacity-0'}`}
         style={{
           background: theme.from,
         }}
@@ -577,7 +632,7 @@ export function BackgroundEffects() {
 
       {/* 第二层渐变叠加 */}
       <div
-        className="absolute inset-0 opacity-50 transition-all duration-1000"
+        className={`absolute inset-0 opacity-50 transition-all duration-2000 ease-out ${shouldAnimate ? '' : 'opacity-0'}`}
         style={{
           background: theme.to,
           mixBlendMode: "overlay",
@@ -587,7 +642,7 @@ export function BackgroundEffects() {
       {/* 强调色光晕 */}
       {theme.accent && (
         <div
-          className="absolute w-[800px] h-[800px] rounded-full blur-3xl opacity-30 transition-all duration-1000"
+          className={`absolute w-[800px] h-[800px] rounded-full blur-3xl opacity-30 transition-all duration-2000 ease-out ${shouldAnimate ? '' : 'opacity-0'}`}
           style={{
             top: "-200px",
             right: "-200px",
@@ -597,7 +652,7 @@ export function BackgroundEffects() {
       )}
 
       {/* 时间段特定的装饰元素 */}
-      {DECORATION_ELEMENTS[timeOfDay]}
+      {shouldAnimate && DECORATION_ELEMENTS[timeOfDay]}
     </div>
   )
 }

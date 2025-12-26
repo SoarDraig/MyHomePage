@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Plus, X, Edit2, Settings } from "lucide-react"
+import { Plus, X, Edit2, Settings, Dock } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { storage, STORAGE_KEYS, DEFAULT_USER_PROFILE } from "@/lib/storage"
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ export function DockLinks() {
   const [formData, setFormData] = useState({ title: "", url: "", icon: "" })
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
   const [activeLinkId, setActiveLinkId] = useState<string | null>(null) // 移动端点击激活的链接
+  const [functionMode, setFunctionMode] = useState(true) // 功能模式状态
   const [isVisible, setIsVisible] = useState(isMobile) // 移动端默认显示
   const [isHovering, setIsHovering] = useState(false)
   const [editModeAnimating, setEditModeAnimating] = useState(false) // 编辑模式动画状态
@@ -62,6 +64,23 @@ export function DockLinks() {
     localStorage.setItem("quickLinks", JSON.stringify(links))
   }, [links])
 
+  // 监听功能模式变化
+  useEffect(() => {
+    const loadFunctionMode = () => {
+      const userProfile = storage.get(STORAGE_KEYS.USER_PROFILE, DEFAULT_USER_PROFILE)
+      setFunctionMode(userProfile.functionMode !== false)
+    }
+
+    loadFunctionMode()
+
+    const handleProfileUpdate = () => {
+      loadFunctionMode()
+    }
+
+    window.addEventListener('profile-settings-updated', handleProfileUpdate)
+    return () => window.removeEventListener('profile-settings-updated', handleProfileUpdate)
+  }, [])
+
   useEffect(() => {
     // 移动端始终显示，不监听鼠标事件
     if (isMobile) {
@@ -69,7 +88,13 @@ export function DockLinks() {
       return
     }
 
-    // 桌面端监听鼠标移动
+    // 功能模式关闭时始终显示
+    if (!functionMode) {
+      setIsVisible(true)
+      return
+    }
+
+    // 桌面端功能模式开启时监听鼠标移动
     const handleMouseMove = (e: MouseEvent) => {
       const distanceFromBottom = window.innerHeight - e.clientY
       if (distanceFromBottom < 120) {
@@ -81,7 +106,7 @@ export function DockLinks() {
 
     window.addEventListener("mousemove", handleMouseMove)
     return () => window.removeEventListener("mousemove", handleMouseMove)
-  }, [isHovering, isEditing, isMobile])
+  }, [isHovering, isEditing, isMobile, functionMode])
 
   useEffect(() => {
     if (isEditing) {

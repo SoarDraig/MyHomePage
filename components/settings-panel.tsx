@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Settings, Download, Upload, Trash2, RefreshCw, Cloud, User } from "lucide-react"
+import { Settings, Download, Upload, Trash2, RefreshCw, Cloud, User, Zap, Moon } from "lucide-react"
 import { configExport, configImport, storage, STORAGE_KEYS, cloudSync, DEFAULT_USER_PROFILE, type UserProfile } from "@/lib/storage"
 import { useToast } from "@/components/ui/use-toast"
 import { Input } from "@/components/ui/input"
@@ -261,6 +261,60 @@ export function SettingsPanel() {
                         setHasChanges(true)
                       }}
                     />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="function-mode" className="flex items-center gap-2">
+                      <Zap className="w-4 h-4 text-yellow-500" />
+                      功能模式
+                    </Label>
+                    <Checkbox
+                      id="function-mode"
+                      checked={userProfile.functionMode !== false}
+                      onCheckedChange={(checked) => {
+                        setUserProfile({ ...userProfile, functionMode: checked as boolean })
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="dark-mode" className="flex items-center gap-2">
+                      <Moon className="w-4 h-4 text-blue-500" />
+                      深色模式
+                    </Label>
+                    <Checkbox
+                      id="dark-mode"
+                      checked={userProfile.darkMode === true}
+                      onCheckedChange={(checked) => {
+                        setUserProfile({ ...userProfile, darkMode: checked as boolean })
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* 模式说明 */}
+                <div className="space-y-2 p-4 rounded-lg bg-white/5 border border-white/10">
+                  <div className="text-sm font-medium mb-2">模式说明</div>
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div className="flex items-start gap-2">
+                      <Zap className="w-3 h-3 mt-0.5 text-yellow-500 shrink-0" />
+                      <div>
+                        <strong className="text-foreground">功能模式</strong>
+                        <p>开启：显示AI助手和聚合中心</p>
+                        <p>关闭：隐藏AI助手和聚合中心，只显示基础功能</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Moon className="w-3 h-3 mt-0.5 text-blue-500 shrink-0" />
+                      <div>
+                        <strong className="text-foreground">深色模式</strong>
+                        <p>开启：强制显示深夜背景效果，无论时间如何</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
