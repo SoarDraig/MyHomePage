@@ -73,16 +73,18 @@ export function HomeContent() {
       {/* 动态背景效果组件 */}
       <BackgroundEffects />
 
-      <div className="w-full h-[calc(92vh-2rem)] flex flex-col relative z-10">
-        <div className="flex-shrink-0 mb-6 px-6">
-          <div className="w-full flex">
+      <div className={`w-full flex flex-col relative z-10 ${functionMode ? 'h-[calc(92vh-2rem)]' : 'min-h-screen'}`}>
+        <div className={`${functionMode ? 'flex-shrink-0 mb-6' : 'flex-1'} px-6`}>
+          <div className="w-full flex h-full">
             {/* 左侧容器 - 1/4 区域 */}
             <div className="w-1/4">
               {/* 预留：未来可能添加左侧内容 */}
             </div>
             
             {/* 中央内容 - 1/2 区域，居中 */}
-            <div className="w-1/2 flex flex-col items-center justify-center space-y-4">
+            <div className={`w-1/2 flex flex-col items-center space-y-4 transition-all duration-500 ${
+              functionMode ? 'justify-center' : 'justify-end pb-24'
+            }`}>
               <Greeting />
               <Clock />
               <SearchBar />
@@ -127,21 +129,23 @@ export function HomeContent() {
           </div>
         </div>
 
-        <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 px-6">
-          {/* AI助手 - 仅在桌面端且功能模式开启时显示，最多60%宽度 */}
-          {functionMode && !isMobile && (
-            <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-3xl flex-[3] flex flex-col min-h-0 min-h-[300px] max-w-[60%]">
-              <AIChat />
-            </div>
-          )}
+        {functionMode && (
+          <div className="flex-1 flex flex-col md:flex-row gap-4 md:gap-6 min-h-0 px-6">
+            {/* AI助手 - 仅在桌面端且功能模式开启时显示，最多60%宽度 */}
+            {functionMode && !isMobile && (
+              <div className="glass-card p-4 md:p-6 rounded-2xl md:rounded-3xl flex-[3] flex flex-col min-h-0 min-h-[300px] max-w-[60%]">
+                <AIChat />
+              </div>
+            )}
 
-          {/* 右侧：聚合中心 - 仅在功能模式开启时显示，约40%宽度 */}
-          {functionMode && (
-            <div className={`glass-card p-4 md:p-6 rounded-2xl md:rounded-3xl ${isMobile ? 'w-full' : 'md:flex-[2]'} overflow-hidden flex flex-col min-h-[200px] ${isMobile ? 'flex-1' : ''}`}>
-              <AggregationCenter />
-            </div>
-          )}
-        </div>
+            {/* 右侧：聚合中心 - 仅在功能模式开启时显示，约40%宽度 */}
+            {functionMode && (
+              <div className={`glass-card p-4 md:p-6 rounded-2xl md:rounded-3xl ${isMobile ? 'w-full' : 'md:flex-[2]'} overflow-hidden flex flex-col min-h-[200px] ${isMobile ? 'flex-1' : ''}`}>
+                <AggregationCenter />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <DockLinks />

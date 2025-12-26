@@ -301,8 +301,9 @@ export function AIChat() {
         </div>
       </div>
 
-      {showSettings && (
-        <Card className="mb-4 p-4 glass-card max-h-80 overflow-y-auto custom-scrollbar animate-slide-down">
+      <div className={`overflow-hidden transition-all duration-300 ease-in-out ${showSettings ? 'max-h-80 opacity-100 mb-4' : 'max-h-0 opacity-0 mb-0'}`}>
+        {showSettings && (
+          <Card className="p-4 glass-card overflow-y-auto custom-scrollbar">
           <div className="space-y-4">
             {/* 配置列表 */}
             <div className="space-y-2">
@@ -387,10 +388,11 @@ export function AIChat() {
             )}
           </div>
         </Card>
-      )}
+        )}
+      </div>
 
       {!isConfigured && !showSettings && (
-        <div className="flex-1 flex items-center justify-center text-center p-6">
+        <div className="flex-1 flex items-center justify-center text-center px-6 animate-fade-in">
           <div className="text-slate-600 dark:text-slate-400">
             <Settings className="h-12 w-12 mx-auto mb-3 opacity-50" />
             <p>请先配置 API 设置</p>
@@ -400,19 +402,19 @@ export function AIChat() {
 
       {isConfigured && (
         <>
-          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 custom-scrollbar">
+          <div ref={messagesContainerRef} className="flex-1 overflow-y-auto space-y-4 px-4 pb-4 pr-4 custom-scrollbar">
             {messages.length === 0 && (
               <div className="text-center text-slate-600 dark:text-slate-400 py-8">
                 使用 {currentConfig.name} 开始对话...
               </div>
             )}
             {messages.map((message) => (
-              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}>
+              <div key={message.id} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up w-full`}>
                 <div
-                  className={`max-w-[80%] p-3 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-[1.02] ${
+                  className={`max-w-[90%] p-4 rounded-2xl backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
                     message.role === "user"
-                      ? "bg-blue-500/80 text-white glass-card"
-                      : "glass-card text-slate-800 dark:text-white"
+                      ? "bg-blue-500/90 text-white shadow-lg"
+                      : "glass-card text-slate-800 dark:text-white shadow-md"
                   }`}
                 >
                   {message.role === "assistant" ? (
@@ -476,7 +478,7 @@ export function AIChat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <form onSubmit={handleSubmit} className="flex gap-2">
+          <form onSubmit={handleSubmit} className="flex gap-2 pt-2">
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}

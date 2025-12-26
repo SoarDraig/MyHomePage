@@ -196,7 +196,7 @@ export function DockLinks() {
   return (
     <>
       <div
-        className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out ${
+        className={`fixed ${functionMode ? 'bottom-6' : 'bottom-120'} left-1/2 -translate-x-1/2 z-50 transition-all duration-300 ease-out ${
           isVisible ? "translate-y-0 opacity-100" : "translate-y-20 opacity-0 pointer-events-none"
         } ${isMobile ? "md:hidden" : ""}`}
         onMouseEnter={() => setIsHovering(true)}
@@ -260,7 +260,7 @@ export function DockLinks() {
                   onMouseLeave={() => !isMobile && !exitingEditMode && setHoveredIndex(null)}
                 >
                   <div
-                    className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer ${
+                    className={`${!functionMode ? 'w-20 h-20' : 'w-16 h-16'} flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer ${
                       hoveredIndex === index
                         ? "bg-white/50 backdrop-blur-2xl border-2 border-white/70 shadow-2xl shadow-primary/40"
                         : hoveredIndex === null
@@ -301,7 +301,7 @@ export function DockLinks() {
                   }}
                 >
                   <div
-                    className={`w-16 h-16 flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer bg-white/25 backdrop-blur-2xl border border-white/40 shadow-xl`}
+                    className={`${!functionMode ? 'w-20 h-20' : 'w-16 h-16'} flex items-center justify-center rounded-2xl transition-all duration-300 cursor-pointer bg-white/25 backdrop-blur-2xl border border-white/40 shadow-xl`}
                   >
                     {link.icon ? (
                       <span className="text-3xl">{link.icon}</span>
@@ -341,9 +341,9 @@ export function DockLinks() {
                     variant="ghost"
                     size="icon"
                     onClick={openAddDialog}
-                    className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-2xl hover:bg-white/35 border border-white/40 shadow-xl"
+                    className={`${!functionMode ? 'w-20 h-20' : 'w-16 h-16'} rounded-2xl bg-white/25 backdrop-blur-2xl hover:bg-white/35 border border-white/40 shadow-xl`}
                   >
-                    <Plus className="h-8 w-8" />
+                    <Plus className={`${!functionMode ? 'h-10 w-10' : 'h-8 w-8'}`} />
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-background/95 backdrop-blur-xl border-white/20">
@@ -400,16 +400,16 @@ export function DockLinks() {
 
       {/* 桌面端编辑按钮 - 齿轮形状，随 dock 栏显示 */}
       {!isMobile && (
-        <div className={`fixed bottom-6 right-6 z-50 transition-all duration-300 ease-out ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-0 pointer-events-none"}`}>
+        <div className={`fixed ${functionMode ? 'bottom-6' : 'bottom-20'} right-6 z-50 transition-all duration-300 ease-out ${isVisible ? "opacity-100 scale-100" : "opacity-0 scale-0 pointer-events-none"}`}>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsEditing(!isEditing)}
-            className={`w-14 h-14 rounded-full backdrop-blur-xl hover:bg-white/30 transition-all duration-300 ease-out shadow-xl border ${
+            className={`${!functionMode ? 'w-17 h-17' : 'w-14 h-14'} rounded-full backdrop-blur-xl hover:bg-white/30 transition-all duration-300 ease-out shadow-xl border ${
               isEditing ? "bg-white/30 scale-110 rotate-180 border-white/40" : "bg-white/15 rotate-0 border-white/30"
             }`}
           >
-            <Settings className="h-8 w-8 transition-transform duration-300" />
+            <Settings className={`${!functionMode ? 'h-9 w-9' : 'h-8 w-8'} transition-transform duration-300`} />
           </Button>
         </div>
       )}
