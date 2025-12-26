@@ -250,6 +250,18 @@ export function SettingsPanel() {
                       }}
                     />
                   </div>
+
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="show-weather">显示天气</Label>
+                    <Checkbox
+                      id="show-weather"
+                      checked={userProfile.showWeather !== false}
+                      onCheckedChange={(checked) => {
+                        setUserProfile({ ...userProfile, showWeather: checked as boolean })
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
                 </div>
 
                 <Separator />

@@ -13,6 +13,7 @@ export const STORAGE_KEYS: Record<string, string> = {
   THEME: "theme", // 主题偏好
   SETTINGS_VERSION: "settings_version", // 配置版本号
   USER_PROFILE: "user_profile", // 用户个人配置
+  WEATHER_CITY: "weather-city", // 天气：城市
 };
 
 // 用户个人配置类型
@@ -30,6 +31,7 @@ export interface UserProfile {
   dateFormat?: string; // 日期格式（预留）
   showClock?: boolean; // 是否显示时钟
   showGreeting?: boolean; // 是否显示问候语
+  showWeather?: boolean; // 是否显示天气组件
   language?: string; // 语言（预留）
   backgroundMode?: "auto" | "manual"; // 背景模式：自动或手动
   manualBackground?: {
@@ -43,6 +45,7 @@ export const DEFAULT_USER_PROFILE: UserProfile = {
   nickname: "云螭",
   showClock: true,
   showGreeting: true,
+  showWeather: true,
   language: "zh-CN",
   backgroundMode: "auto",
   manualBackground: {
